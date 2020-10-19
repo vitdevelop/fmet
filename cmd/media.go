@@ -35,7 +35,7 @@ var mediaCmd = &cobra.Command{
 		if !utils.IsPath(mediaFile) {
 			path, err := utils.CurrentPath()
 			if err != nil {
-				_ = fmt.Errorf("%s\n", err)
+				fmt.Printf("%s\n", err)
 				return
 			}
 
@@ -62,7 +62,7 @@ func initShow() {
 
 func show() {
 	if len(mediaRegex) > 0 {
-		showRegex()
+		showRegex(mediaRegex)
 	} else {
 		showFileMetadata(mediaFile)
 	}
@@ -87,20 +87,73 @@ Genre -> %s
 
 func showFileMetadata(filePath string) {
 	if !utils.FileExists(filePath) {
-		_ = fmt.Errorf("%s\n", "Resource not found.")
+		fmt.Printf("%s\n", "Resource not found.")
 		return
 	}
 	tagFile, err := id3v2.Open(filePath, id3v2.Options{Parse: true})
 	if err != nil {
-		_ = fmt.Errorf("%s\n", err)
+		fmt.Printf("%s\n", err)
+		return
 	}
 	defer func() { _ = tagFile.Close() }()
 
 	printFileMetadata(tagFile)
 }
 
-func showRegex() {
+func showRegex(regex string) {
+	if verbose {
+		fmt.Printf("Regex -> %s\n", mediaRegex)
+	}
+	fRegex, err := regexp.Compile(regex)
+	if err != nil {
+		fmt.Printf("%s\n", "Current filenames regex is incorrect.")
+		return
+	}
 
+	if verbose {
+		fmt.Printf("Current working directory -> %s\n", workingDirectory)
+	}
+	if len(workingDirectory) == 0 {
+		workingDirectory, err = utils.CurrentPath()
+		if err != nil {
+			fmt.Printf("%s\n", "Unknown working directory.")
+			os.Exit(1)
+		}
+	}
+
+	files, err := ioutil.ReadDir(workingDirectory)
+	if err != nil {
+		fmt.Printf("%s\n", "Unknown working directory.")
+		os.Exit(1)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		if file != nil && fRegex.MatchString(file.Name()) {
+			mediaFilePath := path.Join(workingDirectory, file.Name())
+
+			if !utils.FileExists(mediaFilePath) {
+				fmt.Printf("%s\n", "Resource not found.")
+				return
+			}
+
+			if verbose {
+				fmt.Printf("File path -> %s\n", mediaFilePath)
+			}
+
+			mediaFile, err := id3v2.Open(mediaFilePath, id3v2.Options{
+				Parse: true,
+			})
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				continue
+			}
+			printFileMetadata(mediaFile)
+			_ = mediaFile.Close()
+		}
+	}
 }
 
 // =====================================================================================================================
@@ -148,14 +201,14 @@ func edit() {
 
 func editFileMetadata(filePath string, media *Media) {
 	if !utils.FileExists(filePath) {
-		_ = fmt.Errorf("%s\n", "Resource not found.")
+		fmt.Printf("%s\n", "Resource not found.")
 		return
 	}
 	mediaFile, err := id3v2.Open(filePath, id3v2.Options{
 		Parse: true,
 	})
 	if err != nil {
-		_ = fmt.Errorf("%s\n", err)
+		fmt.Printf("%s\n", err)
 		return
 	}
 
@@ -191,20 +244,20 @@ func editFileMetadata(filePath string, media *Media) {
 func editRegexFileMetadata(regex string, media *Media) {
 	fRegex, err := regexp.Compile(regex)
 	if err != nil {
-		_ = fmt.Errorf("%s\n", "Current filenames regex is incorrect.")
+		fmt.Printf("%s\n", "Current filenames regex is incorrect.")
 	}
 
 	if len(workingDirectory) == 0 {
 		workingDirectory, err = utils.CurrentPath()
 		if err != nil {
-			_ = fmt.Errorf("%s\n", "Unknown working directory.")
+			fmt.Printf("%s\n", "Unknown working directory.")
 			os.Exit(1)
 		}
 	}
 
 	files, err := ioutil.ReadDir(workingDirectory)
 	if err != nil {
-		_ = fmt.Errorf("%s\n", "Unknown working directory.")
+		fmt.Printf("%s\n", "Unknown working directory.")
 		os.Exit(1)
 	}
 
@@ -236,5 +289,3 @@ func editRegexFileMetadata(regex string, media *Media) {
 		}
 	}
 }
-
-// =====================================================================================================================

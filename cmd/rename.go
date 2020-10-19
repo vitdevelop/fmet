@@ -41,7 +41,7 @@ func renameFile(currentName string, newName string) {
 	if !utils.IsPath(currentName) {
 		path, err := utils.CurrentPath()
 		if err != nil {
-			_ = fmt.Errorf("%s\n", err)
+			fmt.Printf("%s\n", err)
 		}
 
 		currentName = filepath.Join(path, currentName)
@@ -49,19 +49,19 @@ func renameFile(currentName string, newName string) {
 	if !strings.Contains(newName, "/") {
 		path, err := os.Getwd()
 		if err != nil {
-			_ = fmt.Errorf("%s\n", err)
+			fmt.Printf("%s\n", err)
 		}
 		newName = filepath.Join(path, newName)
 	}
 	err := os.Rename(currentName, newName)
 	if err != nil {
-		_ = fmt.Errorf("%s\n", err)
+		fmt.Printf("%s\n", err)
 	}
 }
 
 func simpleRename(currentNames []string, newNames []string) {
 	if len(currentNames) != len(newNames) {
-		_ = fmt.Errorf("%s\n", "Current filenames size must be equals with new filenames.")
+		fmt.Printf("%s\n", "Current filenames size must be equals with new filenames.")
 		os.Exit(1)
 	}
 
@@ -74,19 +74,19 @@ func simpleRename(currentNames []string, newNames []string) {
 func regexRename(currentRegex string, newRegex string) {
 	cRegex, err := regexp.Compile(currentRegex)
 	if err != nil {
-		_ = fmt.Errorf("%s\n", "Current filenames regex is incorrect.")
+		fmt.Printf("%s\n", "Current filenames regex is incorrect.")
 	}
 
 	if len(workingDirectory) == 0 {
 		workingDirectory, err = utils.CurrentPath()
 		if err != nil {
-			_ = fmt.Errorf("%s\n", "Unknown working directory.")
+			fmt.Printf("%s\n", "Unknown working directory.")
 			os.Exit(1)
 		}
 	}
 	files, err := ioutil.ReadDir(workingDirectory)
 	if err != nil {
-		_ = fmt.Errorf("%s\n", "Unknown working directory.")
+		fmt.Printf("%s\n", "Unknown working directory.")
 		os.Exit(1)
 	}
 
